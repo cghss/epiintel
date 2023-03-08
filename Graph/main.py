@@ -16,28 +16,29 @@ def get_rows():
     return rows
 
 def create_node(tx, name):
-    tx.run("MERGE (:Node {name: $name})", name=name)
+    tx.run("MERGE (:Activity {name: $name})", name=name)
 
-# Define a function to create a relationship in Neo4j
-def create_relationship(tx, node1, node2, weight):
+# Define a function to create a relationship between activities in Neo4j
+# If relationship is greater than 0...because otherwise there's 8,000+ relationships
+def create_relationship(tx, act1, act2, weight):
     if weight > 0.0:
-        tx.run("MATCH (n1:Node {name: $node1}), (n2:Node {name: $node2}) "
+        tx.run("MATCH (n1:Activity {name: $act1}), (n2:Activity {name: $act2}) "
                "CREATE (n1)-[:CO_OCCURS_WITH {weight: $weight}]->(n2)", 
-               node1=node1, node2=node2, weight=weight)
+               act1=act1, act2=act2, weight=weight)
 
 # Use the functions defined above to insert the co-occurrence matrix into Neo4j
 with NEO4J_DRIVER.session() as session:
     matrix_rows = get_rows()
 
     for row in matrix_rows:
-        node1 = row["Act1"]
-        node2 = row["Act2"]
+        act1 = row["Act1"]
+        act2 = row["Act2"]
         weight = float(row["counts"])
         
-        # Create nodes for node1 and node2 if they don't exist already
-        session.write_transaction(create_node, node1)
-        session.write_transaction(create_node, node2)
+        # Create nodes for act1 and act2 if they don't exist already
+        session.write_transaction(create_node, act1)
+        session.write_transaction(create_node, act2)
         
-        # Create a relationship between node1 and node2 with the weight property set to the co-occurrence value, only if weight is greater than 0
-        session.write_transaction(create_relationship, node1, node2, weight)
+        # Create a relationship between act1 and act2 with the weight property set to the co-occurrence value, only if weight is greater than 0
+        session.write_transaction(create_relationship, act1, act2, weight)
 
