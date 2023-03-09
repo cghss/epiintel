@@ -21,6 +21,14 @@ def get_activity_rows():
         arows = list(csv.DictReader(activities))
     return arows
 
+def parse_csv_string(csv_string):
+    reader = csv.reader([csv_string], delimiter=',', quotechar='"')
+    # convert the csv reader object to a list
+    split_list = list(reader)[0]
+    # strip whitespace from each item in the list
+    split_list = [item.strip() for item in split_list]
+    return split_list
+
 def create_nodes(tx, activity_rows):
     for row in activity_rows:
         activity_name = row["Activity"]
@@ -40,10 +48,10 @@ def create_nodes(tx, activity_rows):
 
         tx.run("MERGE (:Activity {activity_name: $activity_name})", activity_name=activity_name)
 
-        # Split functions, categories, and phases on commas
-        functions_list = [f.strip() for f in functions.split(",")]
-        categories_list = [c.strip() for c in categories.split(",")]
-        phases_list = [p.strip() for p in phases.split(",")]
+        # Split functions, categories, and phases on commas 
+        functions_list = parse_csv_string(functions)
+        categories_list = parse_csv_string(categories)
+        phases_list = parse_csv_string(phases)
 
         # Create nodes for each unique function, category, and phase
         for function_name in set(functions_list):
