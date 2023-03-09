@@ -21,28 +21,52 @@ def get_activity_rows():
         arows = list(csv.DictReader(activities))
     return arows
 
-def create_activity_node(tx, name, functions, categories, phases):
-    # Check for null value in functions and set a default value if necessary
-    if not functions:
-        functions = ""
-    # Check for null value in categories and set a default value if necessary
-    if not categories:
-        categories = ""
-    # Check for null value in phases and set a default value if necessary
-    if not phases:
-        phases = ""
+def create_nodes(tx, activity_rows):
+    for row in activity_rows:
+        activity_name = row["Activity"]
+        functions = row["Function"]
+        categories = row["Category"]
+        phases = row["Phases"]
 
-    tx.run("MERGE (:Activity {name: $name, functions: $functions, "
-           "categories: $categories, phases: $phases})",
-           name=name, functions=functions, categories=categories, phases=phases)
+        # Skip creating nodes that are blank
+        if not functions.strip():
+            continue
 
+        if not categories.strip():
+            continue
+
+        if not phases.strip():
+            continue
+
+        tx.run("MERGE (:Activity {activity_name: $activity_name})", activity_name=activity_name)
+
+        # Split functions, categories, and phases on commas
+        functions_list = [f.strip() for f in functions.split(",")]
+        categories_list = [c.strip() for c in categories.split(",")]
+        phases_list = [p.strip() for p in phases.split(",")]
+
+        # Create nodes for each unique function, category, and phase
+        for function_name in set(functions_list):
+            tx.run("MERGE (f:Function {function_name: $function_name})", function_name=function_name)
+            tx.run("MATCH (a:Activity {activity_name: $activity_name}), (f:Function {function_name: $function_name}) "
+                   "MERGE (a)-[:HAS]->(f)", activity_name=activity_name, function_name=function_name)
+
+        for category_name in set(categories_list):
+            tx.run("MERGE (c:Category {category_name: $category_name})", category_name=category_name)
+            tx.run("MATCH (a:Activity {activity_name: $activity_name}), (c:Category {category_name: $category_name}) "
+                   "MERGE (a)-[:HAS]->(c)", activity_name=activity_name, category_name=category_name)
+
+        for phase_name in set(phases_list):
+            tx.run("MERGE (p:Phase {phase_name: $phase_name})", phase_name=phase_name)
+            tx.run("MATCH (a:Activity {activity_name: $activity_name}), (p:Phase {phase_name: $phase_name}) "
+                   "MERGE (a)-[:HAS]->(p)", activity_name=activity_name, phase_name=phase_name)
 
 # Define a function to create a relationship between activities in Neo4j
 # If relationship is greater than 0...because otherwise there's 8,000+ relationships
 def create_relationship(tx, act1, act2, weight):
     if weight>0.0:
         # Query for nodes with the given activity names
-        tx.run("MATCH (a1:Activity {name: $act1}), (a2:Activity {name: $act2}) "
+        tx.run("MATCH (a1:Activity {activity_name: $act1}), (a2:Activity {activity_name: $act2}) "
                         "CREATE (a1)-[r:CO_OCCURRENCE {weight: $weight}]->(a2) "
                         "RETURN r", act1=act1, act2=act2, weight=weight)
 
@@ -50,17 +74,8 @@ def create_relationship(tx, act1, act2, weight):
 
 # Use the functions defined above to insert the co-occurrence matrix into Neo4j
 with NEO4J_DRIVER.session() as session:
-   # Get the activity rows
-    activity_rows = get_activity_rows()
 
-    # Create the activity nodes and add properties for each activity
-    for row in activity_rows:
-        activity_name = row["Activity"]
-        functions = row["Function"]
-        categories = row["Category"]
-        phases = row["Phases"]
-
-        session.write_transaction(create_activity_node, activity_name, functions, categories, phases)
+    session.write_transaction(create_nodes, get_activity_rows())
 
     # Create the co-occurrence relationships   
     matrix_rows = get_matrix_rows()
