@@ -16,6 +16,7 @@ def get_rows():
     return rows
 
 def create_node(tx, name):
+    name = name.replace('"','')
     tx.run("MERGE (:Activity {name: $name})", name=name)
 
 # Define a function to create a relationship between activities in Neo4j
