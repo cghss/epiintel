@@ -1,2 +1,0 @@
-# epiintel
-DONs x GOAL
