@@ -1,7 +1,7 @@
 library(tidyverse)
 library(MetBrewer)
 
-df <- read_csv("~/Github/epiintel/ActivityList.csv")
+df <- read_csv("~/Github/epiintel/Data/ActivityList.csv")
 
 df %>% select(Activity, `Category (from Function)`) %>%
   rename(Category = `Category (from Function)`) %>%

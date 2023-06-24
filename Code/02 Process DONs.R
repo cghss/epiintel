@@ -2,7 +2,7 @@ library(tidyverse)
 library(lubridate)
 library(patchwork)
 
-df <- read_csv("~/Github/epiintel/DONs.csv")
+df <- read_csv("~/Github/epiintel/Data/DONs.csv")
 
 df %>% pull(DONid) %>% unique() %>% length()
 df %>% filter(!is.na(`Master coding fixed names`)) %>% pull(DONid) %>% unique() %>% length()
@@ -101,7 +101,7 @@ bind_cols(df3[,1:4], pca$scores) %>%
 
 ####################
 
-act <- read_csv("~/Github/epiintel/ActivityListDONs.csv")
+act <- read_csv("~/Github/epiintel/Data/ActivityListDONs.csv")
 
 table(is.na(act$`HR: Textually explicit activities`))
 
