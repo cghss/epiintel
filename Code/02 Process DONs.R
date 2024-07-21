@@ -2,7 +2,7 @@ library(tidyverse)
 library(lubridate)
 library(patchwork)
 
-df <- read_csv("~/Github/epiintel/Data/DONs.csv")
+df <- read_csv("~/Documents/Github/epiintel/Data/DONs.csv")
 
 df %>% pull(DONid) %>% unique() %>% length()
 df %>% filter(!is.na(`Master coding fixed names`)) %>% pull(DONid) %>% unique() %>% length()
@@ -26,6 +26,21 @@ df2 %>%
   group_by(Activities) %>% 
   summarize(nDON = n()) %>% View() # this is the 138 check too
 
+###
+
+df2 %>% 
+  filter(Activities=='Procure and transport medical countermeasures (MCMs)') %>%
+  pull(Link) %>% unique() %>% length()
+
+df2 %>% 
+  filter(Activities=='Provide medical countermeasures (MCMs)') %>%
+  pull(Link) %>% unique() %>% length()
+
+df2 %>%
+  select(Activities, Link) %>% distinct() %>%
+  group_by(Activities) %>% summarize(Count = n()) %>% View()
+
+###
 
 df2 %>%
   ungroup() %>%
@@ -101,7 +116,7 @@ bind_cols(df3[,1:4], pca$scores) %>%
 
 ####################
 
-act <- read_csv("~/Github/epiintel/Data/ActivityListDONs.csv")
+act <- read_csv("~/Documents/Github/epiintel/Data/ActivityListDONs.csv")
 
 table(is.na(act$`HR: Textually explicit activities`))
 
@@ -120,3 +135,4 @@ act %>%
   dplyr::rename(Category = `Category (from Function)`) %>% 
   separate_rows(Category, sep = ', ') %>%
   select(Category, inDON) %>% table() %>% prop.table(margin = 1)
+
